@@ -18,9 +18,26 @@
   --fg-3:#55555160;
   --ok:#9fd8a8;
   --no:#e08a84;
+  --pick:#7ab6f0;
+  --topo:242,241,236;
+  --topo-a:1;
   --grot:'Space Grotesk',-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
   --mono:'Space Mono',ui-monospace,'SFMono-Regular',monospace;
   --ease:cubic-bezier(.22,1,.36,1);
+}
+html.light{
+  --bg:#f5f4ef;
+  --bg-1:#eae8e0;
+  --line:#dedcd2;
+  --line-2:#bfbcb0;
+  --fg:#12120f;
+  --fg-2:#5f5e57;
+  --fg-3:#7e7d75;
+  --ok:#256f3c;
+  --no:#a92e26;
+  --pick:#14538f;
+  --topo:19,19,16;
+  --topo-a:.7;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
@@ -31,6 +48,7 @@ body{
   font-weight:400;
   overflow-x:hidden;
   -webkit-font-smoothing:antialiased;
+  transition:background .45s var(--ease),color .45s var(--ease);
 }
 body.loading{overflow:hidden;}
 ::selection{background:var(--fg);color:var(--bg);}
@@ -77,7 +95,8 @@ body.loading{overflow:hidden;}
   transition:opacity 1.6s ease .3s;
 }
 #topo.in{opacity:.85;}
-@media(max-width:900px){#topo{right:-25%;}#topo.in{opacity:.35;}}
+html.light #topo.in{opacity:.55;}
+@media(max-width:900px){#topo{right:-25%;}#topo.in{opacity:.35;}html.light #topo.in{opacity:.25;}}
 
 nav{
   position:fixed;top:0;left:0;right:0;z-index:100;
@@ -87,6 +106,12 @@ nav{
   transition:padding .4s var(--ease);
 }
 nav.compact{padding:14px 40px;}
+html.light nav{mix-blend-mode:normal;}
+html.light nav::before{
+  content:'';position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to bottom,var(--bg) 55%,transparent);
+  pointer-events:none;
+}
 .brand{
   font-family:var(--mono);font-size:12px;
   letter-spacing:.18em;text-transform:uppercase;
@@ -277,8 +302,15 @@ h1 .thin{font-weight:300;color:var(--fg-2);}
   opacity:0;transition:opacity .4s ease;
 }
 .opt.lock{cursor:default;}
-.opt.pick .opt-l{color:var(--fg);}
 .opt.pick::before{transform:scaleX(1);}
+.opt.pick::after{
+  content:'';position:absolute;left:-18px;top:0;bottom:0;
+  width:2px;background:var(--pick);
+}
+.opt.pick .opt-l,.opt.pick .opt-t{color:var(--pick);}
+.opt.pick .opt-l{font-weight:700;}
+.opt.pick .opt-m{opacity:1;color:var(--pick);}
+@media(max-width:700px){.opt.pick::after{left:-10px;}}
 .opt.yes .opt-l,.opt.yes .opt-t,.opt.yes .opt-m{color:var(--ok);}
 .opt.yes .opt-m{opacity:1;}
 .opt.no .opt-l,.opt.no .opt-t,.opt.no .opt-m{color:var(--no);}
@@ -342,7 +374,21 @@ kbd{border:1px solid var(--line-2);padding:2px 6px;margin:0 2px;color:var(--fg-2
   margin-top:110px;padding-top:26px;border-top:1px solid var(--line);
   font-size:13px;line-height:1.65;color:var(--fg-3);max-width:620px;
 }
+
+.legend{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--fg-3);
+  display:flex;align-items:center;gap:8px;
+}
+.legend i{width:18px;height:2px;background:var(--pick);display:block;}
 </style>
+<script>
+(function(){try{
+  var t=localStorage.getItem('adOeaMet_theme');
+  if(!t)t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';
+  if(t==='light')document.documentElement.classList.add('light');
+}catch(e){}})();
+</script>
 </head>
 <body class="loading">
 
@@ -359,6 +405,7 @@ kbd{border:1px solid var(--line-2);padding:2px 6px;margin:0 2px;color:var(--fg-2
   <div class="nav-right">
     <button class="nav-link" data-go="home">Inicio</button>
     <button class="nav-link" data-go="bank">Banco</button>
+    <button class="nav-link" id="thm" title="Cambiar tema">Modo claro</button>
   </div>
 </nav>
 
@@ -368,6 +415,22 @@ kbd{border:1px solid var(--line-2);padding:2px 6px;margin:0 2px;color:var(--fg-2
 <script>
 (function(){
 "use strict";
+
+var THEME_KEY='adOeaMet_theme';
+var root=document.documentElement;
+var topoRGB=root.classList.contains('light')?'19,19,16':'242,241,236';
+function syncTheme(){
+  var lt=root.classList.contains('light');
+  topoRGB=lt?'19,19,16':'242,241,236';
+  var b=document.getElementById('thm');
+  if(b)b.textContent=lt?'Modo oscuro':'Modo claro';
+}
+document.getElementById('thm').addEventListener('click',function(){
+  root.classList.toggle('light');
+  try{localStorage.setItem(THEME_KEY,root.classList.contains('light')?'light':'dark');}catch(e){}
+  syncTheme();
+});
+syncTheme();
 
 var cv=document.getElementById('topo'),cx=cv.getContext('2d');
 var rot={x:.5,y:0},tgt={x:.5,y:0},dpr=Math.min(window.devicePixelRatio||1,2);
@@ -415,7 +478,7 @@ function frame(){
   for(i=0;i<segs.length;i++){
     var s=segs[i],dz=(s[2]+2.3)/4.6;
     dz=dz<0?0:(dz>1?1:dz);
-    cx.strokeStyle='rgba(242,241,236,'+(.03+dz*.30).toFixed(3)+')';
+    cx.strokeStyle='rgba('+topoRGB+','+(.03+dz*.30).toFixed(3)+')';
     cx.lineWidth=.5+dz*.6;
     cx.beginPath();cx.moveTo(s[0][0],s[0][1]);cx.lineTo(s[1][0],s[1][1]);cx.stroke();
   }
@@ -537,6 +600,17 @@ function home(){
   reveal();
 }
 
+/* Baraja las 4 opciones de una pregunta y recalcula cuál es la correcta,
+   para que la respuesta buena no caiga siempre en la misma posición. */
+function shufOpts(q){
+  var LS=['A','B','C','D'],src=shuf(LS),o={},c='A',i;
+  for(i=0;i<4;i++){
+    o[LS[i]]=q.o[src[i]];
+    if(src[i]===q.c)c=LS[i];
+  }
+  return {n:q.n,q:q.q,o:o,c:c};
+}
+
 function begin(mode){
   var q;
   if(mode==='practice')q=shuf(QUESTIONS);
@@ -546,6 +620,7 @@ function begin(mode){
     q=shuf(QUESTIONS.filter(function(x){return ms.indexOf(x.n)>-1;}));
     if(!q.length){home();return;}
   }
+  q=q.map(shufOpts);
   S={mode:mode,q:q,i:0,a:{},left:T_EXAM,t:null};
   if(mode==='exam'){
     S.t=setInterval(function(){
@@ -580,7 +655,8 @@ function quiz(){
     L=LS[ix];c='opt rv';
     if(S.mode==='exam'){if(a&&a.p===L)c+=' pick';}
     else if(a){c+=' lock';if(L===q.c)c+=' yes';else if(L===a.p)c+=' no';}
-    mk=show?(L===q.c?'&#10003;':(a.p===L?'&#10007;':'')):'';
+    mk=show?(L===q.c?'&#10003;':(a.p===L?'&#10007;':''))
+           :((S.mode==='exam'&&a&&a.p===L)?'&#9679;':'');
     o+='<div class="'+c+'" data-l="'+L+'" data-d="'+(ix*55)+'">'+
        '<span class="opt-l">'+L+'</span><span class="opt-t">'+esc(q.o[L])+'</span>'+
        '<span class="opt-m">'+mk+'</span></div>';
@@ -595,7 +671,9 @@ function quiz(){
     '<div class="opts">'+o+'</div>'+
     '<div class="q-foot">'+
       '<button class="btn" id="pv"'+(S.i===0?' disabled':'')+'><span>&larr; Anterior</span></button>'+
-      '<span class="keys"><kbd>A</kbd><kbd>B</kbd><kbd>C</kbd><kbd>D</kbd> responder &middot; <kbd>&crarr;</kbd> avanzar</span>'+
+      (S.mode==='exam'
+        ?'<span class="legend"><i></i>'+(a?'Marcada: '+a.p:'Sin marcar')+' &middot; puedes cambiarla</span>'
+        :'<span class="keys"><kbd>A</kbd><kbd>B</kbd><kbd>C</kbd><kbd>D</kbd> responder &middot; <kbd>&crarr;</kbd> avanzar</span>')+
       '<button class="btn btn-solid" id="nx"><span>'+(S.i===tot-1?'Finalizar':'Siguiente &rarr;')+'</span></button>'+
     '</div></section>';
   var os=document.querySelectorAll('.opt');
